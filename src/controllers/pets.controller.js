@@ -1,18 +1,23 @@
 import PetDTO from "../dto/Pet.dto.js";
 import { petsService } from "../services/index.js"
 import __dirname from "../utils/index.js";
+import Errors from '../errors/errorDictionary.js';
 
 const getAllPets = async(req,res)=>{
     const pets = await petsService.getAll();
     res.send({status:"success",payload:pets})
 }
 
-const createPet = async(req,res)=> {
-    const {name,specie,birthDate} = req.body;
-    if(!name||!specie||!birthDate) return res.status(400).send({status:"error",error:"Incomplete values"})
-    const pet = PetDTO.getPetInputFrom({name,specie,birthDate});
-    const result = await petsService.create(pet);
-    res.send({status:"success",payload:result})
+const createPet = async(req,res,next)=> {
+    try{
+        const {name,specie,birthDate} = req.body;
+        if(!name||!specie||!birthDate) return next(Errors.PET_INCOMPLETE_VALUES());
+        const pet = PetDTO.getPetInputFrom({name,specie,birthDate});
+        const result = await petsService.create(pet);
+        res.send({status:"success",payload:result})
+    }catch(err){
+        next(err);
+    }
 }
 
 const updatePet = async(req,res) =>{
@@ -28,10 +33,10 @@ const deletePet = async(req,res)=> {
     res.send({status:"success",message:"pet deleted"});
 }
 
-const createPetWithImage = async(req,res) =>{
+const createPetWithImage = async(req,res,next) =>{
     const file = req.file;
     const {name,specie,birthDate} = req.body;
-    if(!name||!specie||!birthDate) return res.status(400).send({status:"error",error:"Incomplete values"})
+    if(!name||!specie||!birthDate) return next(Errors.PET_INCOMPLETE_VALUES());
     console.log(file);
     const pet = PetDTO.getPetInputFrom({
         name,
