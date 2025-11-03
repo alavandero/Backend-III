@@ -2,6 +2,14 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import swaggerUi from 'swagger-ui-express';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const swaggerDocument = JSON.parse(readFileSync(join(__dirname, '../Swagger/swagger.json'), 'utf8'));
 
 import usersRouter from './routes/users.router.js';
 import petsRouter from './routes/pets.router.js';
@@ -39,6 +47,9 @@ connectToMongo().catch(err=>{
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/api/users',usersRouter);
 app.use('/api/pets',petsRouter);
