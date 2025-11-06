@@ -439,7 +439,7 @@ Aquí puedes ver todos los endpoints, probarlos directamente y ver los schemas d
 ### Imagen de Docker en DockerHub
 
 La imagen de Docker del proyecto está disponible en DockerHub:
-**https://hub.docker.com/r/agustinlavanderoivelic/backend_iii_adoptme**
+**https://hub.docker.com/repository/docker/agustinlavanderoivelic/backend_iii_adoptme/general**
 
 ### Construir la imagen de Docker
 
