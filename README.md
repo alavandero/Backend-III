@@ -36,7 +36,7 @@ USE_IN_MEMORY=false
 
 4. **Ejecutar la aplicación**
 
-#### Opción A: Modo in-memory (sin MongoDB)
+#### Opción A: Modo in-memory (sin MongoDB) Inactivo*
 ```bash
 # Windows PowerShell
 $env:USE_IN_MEMORY='true'; npm start
