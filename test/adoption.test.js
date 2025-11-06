@@ -15,7 +15,7 @@ import errorHandler from '../src/middlewares/errorHandler.js';
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// For tests, use in-memory mode
+// For tests, use in-memory mode - MUST be set before any imports
 process.env.USE_IN_MEMORY = 'true';
 
 async function connectToMongo() {
@@ -30,7 +30,9 @@ describe('Adoption Router Tests', () => {
     let testPetId;
     let testAdoptionId;
 
-    before(async () => {
+    before(async function() {
+        this.timeout(15000); // Increase timeout for setup
+        
         await connectToMongo();
         
         app.use(express.json());
@@ -44,17 +46,28 @@ describe('Adoption Router Tests', () => {
         
         app.use(errorHandler);
         
+        // Wait a bit for services to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         server = app.listen(PORT);
+        
+        // Wait for server to be ready
+        await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     after(async () => {
         if (server) {
             server.close();
         }
-        await mongoose.connection.close();
+        // Only close mongoose connection if it's actually connected
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.close();
+        }
     });
 
-    beforeEach(async () => {
+    beforeEach(async function() {
+        this.timeout(10000); // Increase timeout for each test
+        
         // Create a test user for adoption tests
         const userResponse = await request(app)
             .post('/api/sessions/register')
@@ -79,14 +92,18 @@ describe('Adoption Router Tests', () => {
             testUserId = userResponse.body.payload;
         } else {
             const usersResponse = await request(app).get('/api/users');
-            testUserId = usersResponse.body.payload[usersResponse.body.payload.length - 1]._id;
+            if (usersResponse.body.payload && usersResponse.body.payload.length > 0) {
+                testUserId = usersResponse.body.payload[usersResponse.body.payload.length - 1]._id;
+            }
         }
         
-        if (petResponse.body.payload) {
+        if (petResponse.body.payload && petResponse.body.payload._id) {
             testPetId = petResponse.body.payload._id;
         } else {
             const petsResponse = await request(app).get('/api/pets');
-            testPetId = petsResponse.body.payload[petsResponse.body.payload.length - 1]._id;
+            if (petsResponse.body.payload && petsResponse.body.payload.length > 0) {
+                testPetId = petsResponse.body.payload[petsResponse.body.payload.length - 1]._id;
+            }
         }
     });
 
@@ -198,14 +215,14 @@ describe('Adoption Router Tests', () => {
             expect(adoption).to.exist;
 
             // Verify the pet is marked as adopted
-            const petResponse = await request(app).get(`/api/pets/${newPetId}`);
-            expect(petResponse.body.payload.adopted).to.be.true;
-            expect(petResponse.body.payload.owner).to.equal(newUserId);
+            const petVerificationResponse = await request(app).get(`/api/pets/${newPetId}`);
+            expect(petVerificationResponse.body.payload.adopted).to.be.true;
+            expect(petVerificationResponse.body.payload.owner).to.equal(newUserId);
 
             // Verify the user has the pet in their pets array
-            const userResponse = await request(app).get(`/api/users/${newUserId}`);
-            expect(userResponse.body.payload.pets).to.be.an('array');
-            const petInUserPets = userResponse.body.payload.pets.find(p => p._id === newPetId);
+            const userVerificationResponse = await request(app).get(`/api/users/${newUserId}`);
+            expect(userVerificationResponse.body.payload.pets).to.be.an('array');
+            const petInUserPets = userVerificationResponse.body.payload.pets.find(p => p._id === newPetId);
             expect(petInUserPets).to.exist;
         });
 
